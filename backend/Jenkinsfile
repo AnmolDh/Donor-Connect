@@ -22,11 +22,6 @@ pipeline {
                 """
             }
         }
-        stage('Checkout Code') {
-            steps {
-                checkout scm
-            }
-        }
         stage('Build Docker Image on EC2') {
             steps {
                 bat '''
