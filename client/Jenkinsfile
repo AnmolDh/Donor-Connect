@@ -1,0 +1,52 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION = 'ap-south-1'
+        S3_BUCKET = 'donorconnect-client'
+        CI = 'false'
+        REACT_APP_SERVER_URL = 'https://donorconnect-api.tbhidk.tech'
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    bat '''
+                    cd client && npm install
+                    '''
+                }
+            }
+        }
+
+        stage('Build React App') {
+            steps {
+                script {
+                    bat '''
+                    cd client
+                    set "REACT_APP_SERVER_URL=%REACT_APP_SERVER_URL%"
+                    npm run build
+                    '''
+                }
+            }
+        }
+
+        stage('Upload to S3') {
+            steps {
+                withAWS(credentials: 'AWS-Admin-Cred', region: "${AWS_REGION}") {
+                    script {
+                        bat '''
+                        aws s3 sync client/build/ s3://%S3_BUCKET% --delete
+                        '''
+                    }
+                }
+            }
+        }
+    }
+}
