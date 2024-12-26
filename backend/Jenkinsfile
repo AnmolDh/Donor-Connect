@@ -1,9 +1,9 @@
 pipeline {
     agent any
     environment {
-        PEM_PATH = "C:\\Users\\anmol\\OneDrive\\Documents\\CSE\\donorconnect.pem"  // path where PEM is stored securely
-        TEMP_PEM_PATH = "C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\test@tmp\\donorconnect.pem"  // temporary path
-        EC2_IP = credentials('EC2_IP') // EC2 IP stored in Jenkins credentials
+        PEM_PATH = "C:\\Users\\anmol\\OneDrive\\Documents\\CSE\\donorconnect.pem"
+        TEMP_PEM_PATH = "C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\test@tmp\\donorconnect.pem"
+        EC2_IP = credentials('EC2_IP')
     }
     stages {
         stage('Prepare PEM File') {
@@ -25,15 +25,8 @@ pipeline {
         stage('Build Docker Image on EC2') {
             steps {
                 bat '''
-                REM Windows equivalent of SSH command
-                echo Building Docker image on EC2 instance
-                REM SSH into EC2 and clean the /tmp/backend directory
                 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -i %TEMP_PEM_PATH% ubuntu@%EC2_IP% "mkdir -p /tmp/backend && rm -rf /tmp/backend/*"
-                
-                REM Copy local files to EC2 instance using SCP (ensure OpenSSH for Windows is installed)
                 scp -i %TEMP_PEM_PATH% -r ./backend/* ubuntu@%EC2_IP%:/tmp/backend/
-                
-                REM SSH into EC2 again to build the Docker image
                 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -i %TEMP_PEM_PATH% ubuntu@%EC2_IP% "cd /tmp/backend && sudo docker build -t backend-local-image ."
                 '''
             }
@@ -41,7 +34,6 @@ pipeline {
         stage('Deploy Docker Container on EC2') {
             steps {
                 bat '''
-                REM SSH into EC2 to stop, remove, and run the Docker container
                 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -i %TEMP_PEM_PATH% ubuntu@%EC2_IP% "sudo docker stop donorconnect || true"
                 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -i %TEMP_PEM_PATH% ubuntu@%EC2_IP% "sudo docker rm donorconnect || true"
                 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -i %TEMP_PEM_PATH% ubuntu@%EC2_IP% "sudo docker run -d --name donorconnect --env-file /home/ubuntu/.env -p 3177:3177 backend-local-image"
