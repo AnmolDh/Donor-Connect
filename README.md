@@ -16,6 +16,7 @@ Donor-Connect is a web-based platform designed to streamline the blood donation 
 - **Backend**: Node.js, Express.js
 - **Database**: MongoDB, Mongoose
 - **Authentication**: JSON Web Tokens (JWT)
+- **Cloud/Devops**: AWS, Jenkins, Docker
 
 ## Getting Started
 
